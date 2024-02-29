@@ -2,14 +2,14 @@ repo_name: mauriliofilho/RedditOS
 report_id: 4424f591742a5593376069def012ea06
 version: 0.1
 repo_type: Public
-timestamp: '2024-01-05T08:31:01+00:00'
+timestamp: '2024-02-29T18:56:13+00:00'
 requested_by: Dimillian
 provider: github
 branch: master
 detected_tools_count: 2
 tools:
 - name: Swift
-  description: 'An innovative new programming language for Cocoa and Cocoa Touch. '
+  description: An innovative new programming language for Cocoa and Cocoa Touch.
   website_url: https://developer.apple.com/swift/
   license: Apache-2.0
   open_source: true
