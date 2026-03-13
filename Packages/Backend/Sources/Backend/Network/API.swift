@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import os
 
 public class API {
     static public let shared = API()
@@ -96,13 +97,21 @@ public class API {
             request = URLRequest(url: url)
         }
         request.httpMethod = httpMethod
+        let requestDescription = "\(httpMethod) \(url.absoluteString)"
+        AppLogger.network.debug("Request started: \(requestDescription, privacy: .public)")
         return session.dataTaskPublisher(for: request)
             .tryMap{ data, response in
-                return try APIError.processResponse(data: data, response: response)
+                let result = try APIError.processResponse(data: data, response: response)
+                if let httpResponse = response as? HTTPURLResponse {
+                    AppLogger.network.debug("Request succeeded: \(requestDescription, privacy: .public) — HTTP \(httpResponse.statusCode)")
+                }
+                return result
             }
             .decode(type: T.self, decoder: decoder)
             .mapError{ error in
-                APIError.parseError(reason: error)
+                let apiError = APIError.parseError(reason: error)
+                AppLogger.network.error("Request failed: \(requestDescription, privacy: .public) — \(error.localizedDescription, privacy: .public)")
+                return apiError
             }
             .eraseToAnyPublisher()
     }

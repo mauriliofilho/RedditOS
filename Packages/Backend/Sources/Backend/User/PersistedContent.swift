@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import os
 
 public class PersistedContent: ObservableObject {
     @Published public var subreddits: [Subreddit] = [] {
@@ -40,8 +41,9 @@ public class PersistedContent: ObservableObject {
             do {
                 let savedData = try decoder.decode(SavedData.self, from: data)
                 self.subreddits = savedData.subreddits
+                AppLogger.persistence.info("Persisted content loaded — \(savedData.subreddits.count) subreddits")
             } catch let error {
-                print("Error while loading: \(error.localizedDescription)")
+                AppLogger.persistence.error("Failed to load persisted content: \(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -51,8 +53,9 @@ public class PersistedContent: ObservableObject {
             let savedData = SavedData(subreddits: subreddits)
             let data = try self.encoder.encode(savedData)
             try data.write(to: self.filePath, options: .atomicWrite)
+            AppLogger.persistence.debug("Persisted content saved — \(savedData.subreddits.count) subreddits")
         } catch let error {
-            print("Error while saving: \(error.localizedDescription)")
+            AppLogger.persistence.error("Failed to save persisted content: \(error.localizedDescription, privacy: .public)")
         }
     }
 }
