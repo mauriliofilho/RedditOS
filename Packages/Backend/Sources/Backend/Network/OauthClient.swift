@@ -2,6 +2,7 @@ import SwiftUI
 import Combine
 import Foundation
 import KeychainAccess
+import os
 
 
 public class OauthClient: ObservableObject {
@@ -46,17 +47,19 @@ public class OauthClient: ObservableObject {
             self.secrets = secrets
         } else {
             self.secrets = nil
-            print("Error: No secrets file found, you won't be able to login on Reddit")
+            AppLogger.auth.error("No secrets file found — Reddit login will not be available")
         }
         
         let keychain = Keychain(service: keychainService)
         if let token = keychain[keychainAuthTokenKey],
            let refresh = keychain[keychainAuthTokenRefreshToken] {
+            AppLogger.auth.info("Existing auth token found in keychain — refreshing")
             authState = .authenthicated(authToken: token)
             DispatchQueue.main.async {
                 self.refreshToken(refreshToken: refresh)
             }
         } else {
+            AppLogger.auth.info("No stored auth token — user is signed out")
             authState = .signedOut
         }
         
@@ -76,9 +79,10 @@ public class OauthClient: ObservableObject {
     
     public func startOauthFlow() -> URL? {
         guard let clientId = secrets?["client_id"] as? String else {
+            AppLogger.auth.error("Cannot start OAuth flow — client_id missing from secrets")
             return nil
         }
-        
+        AppLogger.auth.info("Starting OAuth flow")
         authState = .signinInProgress
         
         return URL(string: baseURL)!
@@ -94,11 +98,17 @@ public class OauthClient: ObservableObject {
         if url.absoluteString.hasPrefix(redirectURI),
            url.queryParameters?.first(where: { $0.value == state }) != nil,
            let code = url.queryParameters?.first(where: { $0.key == type }){
+            AppLogger.auth.info("OAuth redirect received — exchanging code for token")
             authState = .signinInProgress
             requestCancellable = makeOauthPublisher(code: code.value)?
                 .receive(on: DispatchQueue.main)
-                .sink(receiveCompletion: { _ in },
+                .sink(receiveCompletion: { completion in
+                    if case .failure(let error) = completion {
+                        AppLogger.auth.error("OAuth token exchange failed: \(error.localizedDescription, privacy: .public)")
+                    }
+                },
                 receiveValue: { response in
+                    AppLogger.auth.info("OAuth token exchange succeeded — user authenticated")
                     self.authState = .authenthicated(authToken: response.accessToken)
                     let keychain = Keychain(service: self.keychainService)
                     keychain[self.keychainAuthTokenKey] = response.accessToken
@@ -108,6 +118,7 @@ public class OauthClient: ObservableObject {
     }
     
     public func logout() {
+        AppLogger.auth.info("User signed out")
         authState = .signedOut
         let keychain = Keychain(service: keychainService)
         keychain[keychainAuthTokenKey] = nil
@@ -115,10 +126,16 @@ public class OauthClient: ObservableObject {
     }
     
     private func refreshToken(refreshToken: String) {
+        AppLogger.auth.info("Refreshing OAuth token")
         refreshCancellable = makeRefreshOauthPublisher(refreshToken: refreshToken)?
             .receive(on: DispatchQueue.main)
-            .sink(receiveCompletion: { _ in },
+            .sink(receiveCompletion: { completion in
+                if case .failure(let error) = completion {
+                    AppLogger.auth.error("OAuth token refresh failed: \(error.localizedDescription, privacy: .public)")
+                }
+            },
             receiveValue: { response in
+                AppLogger.auth.info("OAuth token refresh succeeded")
                 self.authState = .authenthicated(authToken: response.accessToken)
                 let keychain = Keychain(service: self.keychainService)
                 keychain[self.keychainAuthTokenKey] = response.accessToken

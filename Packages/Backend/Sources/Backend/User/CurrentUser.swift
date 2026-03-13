@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import Combine
+import os
 
 public class CurrentUser: ObservableObject {
     @Published public var user: User?
@@ -24,11 +25,15 @@ public class CurrentUser: ObservableObject {
     }
     
     private func refreshUser() {
+        AppLogger.user.info("Fetching current user profile")
         let cancellable = makeUserPublisher()?
             .receive(on: DispatchQueue.main)
-            .sink(receiveCompletion: { error in
-                print(error)
+            .sink(receiveCompletion: { completion in
+                if case .failure(let error) = completion {
+                    AppLogger.user.error("Failed to fetch user profile: \(error.localizedDescription, privacy: .public)")
+                }
             }, receiveValue: { user in
+                AppLogger.user.info("User profile loaded: \(user.name, privacy: .private)")
                 self.user = user
             })
         disposables.append(cancellable)

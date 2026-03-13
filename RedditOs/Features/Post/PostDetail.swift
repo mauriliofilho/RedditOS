@@ -27,7 +27,7 @@ struct PostDetail: View {
             }.padding(.bottom, 16)
             PostDetailCommentsSection(comments: viewModel.comments)
         }
-        .onAppear(perform: viewModel.fechComments)
+        .onAppear(perform: viewModel.fetchComments)
         .frame(minWidth: 500,
                maxWidth: .infinity,
                maxHeight: .infinity)
