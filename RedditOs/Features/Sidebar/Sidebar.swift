@@ -36,6 +36,16 @@ struct Sidebar: View {
             }.listItemTint(Color("RedditBlue"))
             
             Group {
+                Text("Subscriptions").foregroundColor(.gray)
+                ForEach(currentUser.subscriptions) { reddit in
+                    NavigationLink(destination: SubredditPostsListView(name: reddit.name)) {
+                        Label(reddit.name.capitalized, systemImage: "list.bullet")
+                    }.tag("subscribed\(reddit.name)")
+                }
+            }
+            .listItemTint(Color("RedditBlue"))
+            
+            Group {
                 subredditsHeader.foregroundColor(.gray)
                 ForEach(localData.subreddits) { reddit in
                     HStack {
