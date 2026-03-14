@@ -97,7 +97,17 @@ public class API {
             request = URLRequest(url: url)
         }
         request.httpMethod = httpMethod
-        let requestDescription = "\(httpMethod) \(url.absoluteString)"
+        let sanitizedURLString: String = {
+            if var components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+                components.user = nil
+                components.password = nil
+                components.query = nil
+                return components.string ?? url.absoluteString
+            } else {
+                return url.absoluteString
+            }
+        }()
+        let requestDescription = "\(httpMethod) \(sanitizedURLString)"
         AppLogger.network.debug("Request started: \(requestDescription, privacy: .public)")
         return session.dataTaskPublisher(for: request)
             .tryMap{ data, response in
