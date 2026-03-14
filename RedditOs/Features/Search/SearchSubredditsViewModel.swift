@@ -50,7 +50,7 @@ class SearchSubredditsViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .map{ $0.subreddits }
             .sink{ [weak self] results in
-                let count = results?.count ?? 0
+                let count = results.count ?? 0
                 AppLogger.search.debug("Search returned \(count) results for query: \(text, privacy: .public)")
                 self?.isLoading = false
                 self?.results = results

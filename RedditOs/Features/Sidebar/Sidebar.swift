@@ -59,18 +59,7 @@ struct Sidebar: View {
             .listItemTint(Color("RedditGold"))
             .animation(.easeInOut)
                         
-            if let subs = currentUser.subscriptions {
-                Group {
-                    Text("Subscriptions").foregroundColor(.gray)
-                    ForEach(subs) { reddit in
-                        HStack {
-                            NavigationLink(destination: SubredditPostsListView(name: reddit.name)) {
-                                Label(reddit.name.capitalized, systemImage: "globe")
-                            }.tag(reddit.name)
-                        }
-                    }
-                }.listItemTint(Color("RedditBlue"))
-            }
+
         }
         .listStyle(SidebarListStyle())
         .frame(minWidth: 150, idealWidth: 150, maxWidth: 200, maxHeight: .infinity)
